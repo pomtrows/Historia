@@ -1,0 +1,242 @@
+import React, { useState, useEffect } from 'react';
+import { Link, useParams } from 'react-router-dom';
+import { ArrowLeft, Loader2, X, ChevronLeft, ChevronRight } from 'lucide-react';
+import { supabase } from '../../lib/supabase';
+import ChapterNav from './ChapterNav';
+
+// Mock data pour /lesson/1
+const mockAnnexes = [
+  {
+    id: 1,
+    title: "La Grotte de Lascaux",
+    description: "Surnommée la \"chapelle Sixtine de l'art pariétal\", la grotte de Lascaux (Dordogne, France) abrite des peintures polychromes spectaculaires. Les artistes préhistoriques utilisaient des pigments naturels (ocre jaune, ocre rouge, bioxyde de manganèse pour le noir) pour peindre de gigantesques taureaux, des chevaux et des cerfs.\n\nNote : Remarquez l'utilisation de la perspective tordue, où le corps de l'animal est de profil mais les cornes sont vues de face pour plus de clarté.",
+    image_url: "https://upload.wikimedia.org/wikipedia/commons/thumb/1/1e/Lascaux_painting.jpg/800px-Lascaux_painting.jpg",
+    century: "Vers 17 000 av. J.-C."
+  },
+  {
+    id: 2,
+    title: "La Cueva de las Manos",
+    description: "Située en Argentine, la \"Grotte des Mains\" est célèbre pour ses centaines d'empreintes de mains négatives. Pour réaliser cela, nos ancêtres plaçaient leur main sur la paroi et soufflaient des pigments pulvérisés à l'aide d'un os creux ou directement avec la bouche, agissant comme un aérosol préhistorique.\n\nNote : C'est la signature intemporelle de l'humanité : \"J'étais ici\".",
+    image_url: "https://upload.wikimedia.org/wikipedia/commons/thumb/c/cf/Cueva_de_las_Manos_in_Santa_Cruz_province_-_Argentina.jpg/800px-Cueva_de_las_Manos_in_Santa_Cruz_province_-_Argentina.jpg",
+    century: "Vers 9 000 av. J.-C."
+  }
+];
+
+export default function AnnexViewer() {
+  const { id: chapterId } = useParams();
+  const [annexes, setAnnexes] = useState([]);
+  const [loading, setLoading] = useState(true);
+
+  // Lightbox state
+  const [lightboxIndex, setLightboxIndex] = useState(null);
+  const allGalleryImages = annexes.flatMap(a => a.gallery || []);
+
+  const openLightbox = (index) => setLightboxIndex(index);
+  const closeLightbox = () => setLightboxIndex(null);
+  
+  const nextImage = (e) => {
+    e?.stopPropagation();
+    if (allGalleryImages.length > 0) {
+      setLightboxIndex((prev) => (prev + 1) % allGalleryImages.length);
+    }
+  };
+  
+  const prevImage = (e) => {
+    e?.stopPropagation();
+    if (allGalleryImages.length > 0) {
+      setLightboxIndex((prev) => (prev - 1 + allGalleryImages.length) % allGalleryImages.length);
+    }
+  };
+
+  useEffect(() => {
+    const handleKeyDown = (e) => {
+      if (lightboxIndex === null) return;
+      if (e.key === 'Escape') closeLightbox();
+      if (e.key === 'ArrowRight') nextImage();
+      if (e.key === 'ArrowLeft') prevImage();
+    };
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [lightboxIndex, allGalleryImages.length]);
+
+  useEffect(() => {
+    const fetchAnnexes = async () => {
+      setLoading(true);
+      try {
+        const { data, error } = await supabase
+          .from('annexes')
+          .select('*')
+          .eq('chapter_id', chapterId)
+          .order('id', { ascending: true });
+
+        if (error && error.code !== '22P02') throw error;
+
+        if (data && data.length > 0) {
+          const formattedAnnexes = data.map(a => ({
+            id: a.id,
+            title: a.title,
+            description: a.content,
+            image_url: a.artworks?.image_url,
+            century: a.artworks?.century,
+            gallery: a.artworks?.gallery || []
+          }));
+          setAnnexes(formattedAnnexes);
+        } else {
+          if (chapterId === "1") {
+            setAnnexes(mockAnnexes);
+          } else {
+            setAnnexes([]);
+          }
+        }
+      } catch (err) {
+        console.error("Erreur chargement annexes:", err);
+        if (chapterId === "1") {
+          setAnnexes(mockAnnexes);
+        } else {
+          setAnnexes([]);
+        }
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchAnnexes();
+  }, [chapterId]);
+
+  if (loading) {
+    return (
+      <div className="flex justify-center items-center h-64 text-historia-blue">
+        <Loader2 className="w-10 h-10 animate-spin mr-3" />
+        <span className="font-serif text-xl">Recherche dans les archives...</span>
+      </div>
+    );
+  }
+
+  if (annexes.length === 0) {
+    return (
+      <div className="max-w-6xl mx-auto px-4 py-12 text-center">
+         <header className="mb-8">
+           <h1 className="text-4xl md:text-5xl font-serif font-bold text-historia-blue mb-4">Art</h1>
+           <p className="text-lg text-slate-500 italic font-serif">Découvertes et chefs-d'œuvre du chapitre</p>
+         </header>
+         <ChapterNav chapterId={chapterId} />
+         <div className="text-xl text-slate-500 italic mt-10">Aucun contenu d'art disponible pour ce chapitre.</div>
+      </div>
+    );
+  }
+
+  return (
+    <>
+      <div className="max-w-6xl mx-auto px-4 py-12">
+        <header className="mb-8 text-center">
+          <h1 className="text-4xl md:text-5xl font-serif font-bold text-historia-blue mb-4">Art</h1>
+          <p className="text-lg text-slate-500 italic font-serif">Découvertes et chefs-d'œuvre du chapitre</p>
+        </header>
+
+        <ChapterNav chapterId={chapterId} />
+
+        <div className="space-y-20">
+          {annexes.map((annex, index) => {
+            const isReversed = index % 2 !== 0;
+            return (
+              <div key={annex.id} className={`flex flex-col ${isReversed ? 'md:flex-row-reverse' : 'md:flex-row'} gap-8 items-center bg-white p-6 rounded-2xl shadow-lg border border-slate-100`}>
+                <div className="w-full md:w-1/2 overflow-hidden rounded-xl bg-slate-900 border-4 border-[#2b2b2b] shadow-2xl">
+                  <img 
+                    src={annex.image_url} 
+                    alt={annex.title} 
+                    className="w-full h-auto max-h-[500px] object-cover hover:scale-105 transition-transform duration-700"
+                    referrerPolicy="no-referrer"
+                  />
+                </div>
+                <div className="w-full md:w-1/2">
+                  {annex.century && (
+                    <span className="text-historia-gold font-bold tracking-wider uppercase text-sm mb-2 block">{annex.century}</span>
+                  )}
+                  <h3 className="font-serif text-3xl font-bold text-historia-blue mb-4">{annex.title}</h3>
+                  <div className="text-slate-600 leading-relaxed space-y-4 whitespace-pre-wrap">
+                    {annex.description}
+                  </div>
+                </div>
+              </div>
+            );
+          })}
+        </div>
+
+        {/* Rendu de la galerie si présente */}
+        {allGalleryImages.length > 0 && (
+          <div className="mt-24">
+            <div className="text-center mb-12">
+              <h3 className="text-3xl font-serif font-bold text-historia-blue mb-4">Galerie d'Exploration</h3>
+              <div className="w-24 h-1 bg-historia-gold mx-auto rounded-full"></div>
+            </div>
+            
+            <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4">
+              {allGalleryImages.map((img, idx) => (
+                <div 
+                  key={idx} 
+                  onClick={() => openLightbox(idx)}
+                  className="aspect-square rounded-xl overflow-hidden shadow-md border-2 border-slate-200 group cursor-pointer bg-slate-900"
+                >
+                  <img 
+                    src={img} 
+                    alt={`Galerie ${idx + 1}`} 
+                    className="w-full h-full object-cover group-hover:scale-110 group-hover:opacity-80 transition-all duration-500"
+                    referrerPolicy="no-referrer"
+                  />
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+      </div>
+
+      {/* Lightbox Modal */}
+      {lightboxIndex !== null && (
+        <div 
+          className="fixed inset-0 z-[100] flex items-center justify-center bg-black/95 backdrop-blur-sm" 
+          onClick={closeLightbox}
+        >
+          {/* Close button */}
+          <button 
+            className="absolute top-4 right-4 text-white/70 hover:text-white hover:bg-white/10 p-2 rounded-full transition-colors z-50" 
+            onClick={closeLightbox}
+          >
+            <X className="w-8 h-8" />
+          </button>
+
+          {/* Prev button */}
+          <button 
+            className="absolute left-4 top-1/2 -translate-y-1/2 text-white/50 hover:text-white hover:bg-white/10 p-3 rounded-full transition-all z-50"
+            onClick={prevImage}
+          >
+            <ChevronLeft className="w-10 h-10" />
+          </button>
+
+          {/* Next button */}
+          <button 
+            className="absolute right-4 top-1/2 -translate-y-1/2 text-white/50 hover:text-white hover:bg-white/10 p-3 rounded-full transition-all z-50"
+            onClick={nextImage}
+          >
+            <ChevronRight className="w-10 h-10" />
+          </button>
+
+          {/* Main Image */}
+          <div className="relative max-w-full max-h-full p-4 md:p-12 flex items-center justify-center">
+            <img 
+              src={allGalleryImages[lightboxIndex]} 
+              alt={`Plein écran ${lightboxIndex + 1}`}
+              className="max-h-[85vh] max-w-[85vw] object-contain shadow-2xl rounded"
+              onClick={(e) => e.stopPropagation()} 
+              referrerPolicy="no-referrer"
+            />
+          </div>
+          
+          {/* Indicators */}
+          <div className="absolute bottom-6 left-1/2 -translate-x-1/2 text-white/70 text-sm font-bold bg-black/50 px-4 py-2 rounded-full">
+            {lightboxIndex + 1} / {allGalleryImages.length}
+          </div>
+        </div>
+      )}
+    </>
+  );
+}
