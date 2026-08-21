@@ -9,6 +9,7 @@ export default function LessonPage() {
   const location = useLocation();
   const [chapter, setChapter] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [zoomedImg, setZoomedImg] = useState(null);
 
   useEffect(() => {
     const fetchChapter = async () => {
@@ -73,13 +74,40 @@ export default function LessonPage() {
     };
   }, [loading, id, location.hash]);
 
+  const handleImageClick = (e) => {
+    if (e.target.tagName === 'IMG') {
+      setZoomedImg(e.target.src);
+    }
+  };
+
   if (loading) {
     return <div className="max-w-4xl mx-auto px-4 py-20 text-center text-xl font-serif text-historia-blue">Chargement du parchemin...</div>;
   }
 
+  // Zoom Modal Component inline
+  const zoomModal = zoomedImg && (
+    <div 
+      className="fixed inset-0 z-[100] bg-black/90 flex items-center justify-center p-4 cursor-zoom-out opacity-0 animate-fade-in"
+      onClick={() => setZoomedImg(null)}
+    >
+      <img 
+        src={zoomedImg} 
+        alt="Agrandissement" 
+        className="max-w-full max-h-full object-contain scale-95 animate-scale-in"
+      />
+    </div>
+  );
+
   // Si on est sur /lesson/1 et qu'il n'y a pas de chapitre en BD, on affiche le cours démo de la préhistoire.
   if (!chapter && id === "1") {
-    return <DemoLesson />;
+    return (
+      <>
+        <div onClick={handleImageClick}>
+          <DemoLesson />
+        </div>
+        {zoomModal}
+      </>
+    );
   }
 
   if (!chapter) {
@@ -87,44 +115,47 @@ export default function LessonPage() {
   }
 
   return (
-    <div className="max-w-4xl mx-auto px-4 py-12">
-      <header className="mb-8 text-center">
-        <h1 className="text-4xl md:text-5xl font-serif font-bold text-historia-blue mb-4">{chapter.title}</h1>
-      </header>
+    <>
+      <div className="max-w-4xl mx-auto px-4 py-12" onClick={handleImageClick}>
+        <header className="mb-8 text-center">
+          <h1 className="text-4xl md:text-5xl font-serif font-bold text-historia-blue mb-4">{chapter.title}</h1>
+        </header>
 
-      <ChapterNav chapterId={id} />
+        <ChapterNav chapterId={id} />
 
-      <div id="lecon" className="scroll-mt-8">
-        {chapter.map_url && (
-          <section className="mb-12 rounded-xl overflow-hidden shadow-2xl border-4 border-slate-100">
-            <div className="bg-slate-200 h-96 flex items-center justify-center relative overflow-hidden">
-              <img 
-                src={chapter.map_url} 
-                alt="Carte du chapitre" 
-                className="w-full h-full object-cover opacity-90 hover:opacity-100 transition-opacity"
-                referrerPolicy="no-referrer"
-              />
-            </div>
-          </section>
-        )}
+        <div id="lecon" className="scroll-mt-8">
+          {chapter.map_url && (
+            <section className="mb-12 rounded-xl overflow-hidden shadow-2xl border-4 border-slate-100">
+              <div className="bg-slate-200 h-96 flex items-center justify-center relative overflow-hidden">
+                <img 
+                  src={chapter.map_url} 
+                  alt="Carte du chapitre" 
+                  className="w-full h-full object-cover opacity-90 hover:opacity-100 transition-opacity cursor-zoom-in"
+                  referrerPolicy="no-referrer"
+                />
+              </div>
+            </section>
+          )}
 
 
-      {/* Rendu dynamique du HTML de TipTap */}
-      <article 
-        className="prose prose-lg max-w-none prose-headings:font-serif prose-headings:text-historia-blue prose-p:text-slate-700 prose-p:leading-relaxed space-y-6"
-        dangerouslySetInnerHTML={{ __html: chapter.content }}
-      />
+        {/* Rendu dynamique du HTML de TipTap */}
+        <article 
+          className="prose prose-lg max-w-none prose-headings:font-serif prose-headings:text-historia-blue prose-p:text-slate-700 prose-p:leading-relaxed space-y-6 [&_img]:cursor-zoom-in"
+          dangerouslySetInnerHTML={{ __html: chapter.content }}
+        />
+        </div>
+
+        <div className="mt-16 flex flex-col sm:flex-row gap-4 justify-center">
+          <Link to={`/lesson/${id}/quiz`} className="bg-historia-blue text-white px-8 py-4 rounded-lg font-bold hover:bg-slate-800 transition-colors shadow-lg text-center">
+            Lancer le Quiz
+          </Link>
+          <Link to={`/lesson/${id}/annex`} className="bg-white border-2 border-historia-gold text-historia-gold px-8 py-4 rounded-lg font-bold hover:bg-yellow-50 transition-colors shadow-lg text-center">
+            Art
+          </Link>
+        </div>
       </div>
-
-      <div className="mt-16 flex flex-col sm:flex-row gap-4 justify-center">
-        <Link to={`/lesson/${id}/quiz`} className="bg-historia-blue text-white px-8 py-4 rounded-lg font-bold hover:bg-slate-800 transition-colors shadow-lg text-center">
-          Lancer le Quiz
-        </Link>
-        <Link to={`/lesson/${id}/annex`} className="bg-white border-2 border-historia-gold text-historia-gold px-8 py-4 rounded-lg font-bold hover:bg-yellow-50 transition-colors shadow-lg text-center">
-          Art
-        </Link>
-      </div>
-    </div>
+      {zoomModal}
+    </>
   );
 }
 
