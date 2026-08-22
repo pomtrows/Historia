@@ -154,7 +154,7 @@ export default function LessonPage() {
 
   return (
     <>
-      <div className="max-w-4xl mx-auto px-4 py-12" onClick={handleImageClick}>
+      <div className="max-w-4xl mx-auto px-4 py-4 md:py-12" onClick={handleImageClick}>
         <div className="mb-6">
           <Link to={`/courses#epoch-${chapter.epoch_id || '1'}`} className="inline-flex items-center text-slate-500 hover:text-historia-blue font-bold transition-colors">
             <ArrowLeft className="w-5 h-5 mr-2" /> Retour aux époques
@@ -219,7 +219,7 @@ function DemoLesson() {
   const { id } = useParams();
   
   return (
-    <div className="max-w-4xl mx-auto px-4 py-12">
+    <div className="max-w-4xl mx-auto px-4 py-4 md:py-12">
       <div className="mb-6">
         <Link to={`/courses#epoch-1`} className="inline-flex items-center text-slate-500 hover:text-historia-blue font-bold transition-colors">
           <ArrowLeft className="w-5 h-5 mr-2" /> Retour aux époques
