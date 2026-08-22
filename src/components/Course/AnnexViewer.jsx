@@ -27,24 +27,33 @@ export default function AnnexViewer() {
   const [annexes, setAnnexes] = useState([]);
   const [loading, setLoading] = useState(true);
 
-  // Lightbox state
+  // Lightbox state (stores the URL directly)
   const [lightboxIndex, setLightboxIndex] = useState(null);
-  const allGalleryImages = annexes.flatMap(a => a.gallery || []);
+  
+  // Isoler la galerie courante en fonction de l'image ouverte
+  const currentAnnex = annexes.find(a => [a.image_url, ...(a.gallery || [])].includes(lightboxIndex));
+  const currentGalleryImages = currentAnnex ? [currentAnnex.image_url, ...(currentAnnex.gallery || [])].filter(Boolean) : [];
 
-  const openLightbox = (index) => setLightboxIndex(index);
+  const openLightbox = (url) => setLightboxIndex(url);
   const closeLightbox = () => setLightboxIndex(null);
   
   const nextImage = (e) => {
     e?.stopPropagation();
-    if (allGalleryImages.length > 0) {
-      setLightboxIndex((prev) => (prev + 1) % allGalleryImages.length);
+    if (currentGalleryImages.length > 0 && lightboxIndex) {
+      const currentIndex = currentGalleryImages.indexOf(lightboxIndex);
+      if (currentIndex !== -1) {
+        setLightboxIndex(currentGalleryImages[(currentIndex + 1) % currentGalleryImages.length]);
+      }
     }
   };
   
   const prevImage = (e) => {
     e?.stopPropagation();
-    if (allGalleryImages.length > 0) {
-      setLightboxIndex((prev) => (prev - 1 + allGalleryImages.length) % allGalleryImages.length);
+    if (currentGalleryImages.length > 0 && lightboxIndex) {
+      const currentIndex = currentGalleryImages.indexOf(lightboxIndex);
+      if (currentIndex !== -1) {
+        setLightboxIndex(currentGalleryImages[(currentIndex - 1 + currentGalleryImages.length) % currentGalleryImages.length]);
+      }
     }
   };
 
@@ -57,7 +66,7 @@ export default function AnnexViewer() {
     };
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [lightboxIndex, allGalleryImages.length]);
+  }, [lightboxIndex, currentGalleryImages.length]);
 
   useEffect(() => {
     const fetchAnnexes = async () => {
@@ -208,12 +217,32 @@ export default function AnnexViewer() {
             <X className="w-8 h-8" />
           </button>
 
+          {/* Zone de clic Gauche */}
+          <div 
+            className="absolute left-0 top-0 bottom-0 w-1/4 z-40 cursor-pointer flex items-center justify-start pl-4 md:pl-8 group"
+            onClick={prevImage}
+          >
+            <div className="p-3 rounded-full bg-black/30 text-white/50 group-hover:text-white group-hover:bg-black/60 transition-all">
+              <ChevronLeft className="w-10 h-10" />
+            </div>
+          </div>
+
+          {/* Zone de clic Droite */}
+          <div 
+            className="absolute right-0 top-0 bottom-0 w-1/4 z-40 cursor-pointer flex items-center justify-end pr-4 md:pr-8 group"
+            onClick={nextImage}
+          >
+            <div className="p-3 rounded-full bg-black/30 text-white/50 group-hover:text-white group-hover:bg-black/60 transition-all">
+              <ChevronRight className="w-10 h-10" />
+            </div>
+          </div>
+
           {/* Main Image */}
-          <div className="relative max-w-full max-h-full p-4 md:p-12 flex items-center justify-center">
+          <div className="relative max-w-[80vw] max-h-full p-4 md:p-12 flex items-center justify-center z-30 pointer-events-none">
             <img 
-              src={lightboxIndex} // lightboxIndex is now storing the image URL directly for simplicity
+              src={lightboxIndex}
               alt={`Plein écran`}
-              className="max-h-[85vh] max-w-[85vw] object-contain shadow-2xl rounded cursor-pointer"
+              className="max-h-[85vh] max-w-[80vw] object-contain shadow-2xl rounded pointer-events-auto cursor-pointer"
               onClick={closeLightbox} 
               referrerPolicy="no-referrer"
               title="Cliquez pour fermer"

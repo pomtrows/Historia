@@ -53,6 +53,15 @@ export default function AdminPanel() {
           <p className="text-slate-600">Réservé aux administrateurs : assignez des rôles (élève, éditeur, admin) ou supprimez des comptes.</p>
         </div>
 
+        {/* Card Gestion des Vidéos */}
+        <Link to="/admin/videos" className="bg-white p-6 rounded-2xl shadow-lg border border-slate-100 hover:border-historia-gold hover:shadow-xl transition-all group">
+          <div className="w-14 h-14 bg-green-50 rounded-xl flex items-center justify-center mb-6 group-hover:scale-110 transition-transform">
+            <svg xmlns="http://www.w3.org/2000/svg" width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-green-500"><path d="M2.5 17a24.12 24.12 0 0 1 0-10 2 2 0 0 1 1.4-1.4 49.56 49.56 0 0 1 16.2 0A2 2 0 0 1 21.5 7a24.12 24.12 0 0 1 0 10 2 2 0 0 1-1.4 1.4 49.55 49.55 0 0 1-16.2 0A2 2 0 0 1 2.5 17"/><path d="m10 15 5-3-5-3z"/></svg>
+          </div>
+          <h2 className="text-xl font-bold text-historia-blue mb-2">5. Vidéos YouTube</h2>
+          <p className="text-slate-600">Ajoutez des vidéos intégrées pour approfondir chaque chapitre.</p>
+        </Link>
+
       </div>
     </div>
   );

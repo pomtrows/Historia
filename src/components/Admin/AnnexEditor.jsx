@@ -24,27 +24,32 @@ export default function AnnexEditor() {
 
   const compressImage = (file) => {
     return new Promise((resolve, reject) => {
-      const reader = new FileReader();
-      reader.readAsDataURL(file);
-      reader.onload = (event) => {
-        const img = new Image();
-        img.src = event.target.result;
-        img.onload = () => {
-          const canvas = document.createElement('canvas');
-          // Conserver la resolution d'origine (ou limiter si trop grand)
-          canvas.width = img.width;
-          canvas.height = img.height;
-          const ctx = canvas.getContext('2d');
-          ctx.drawImage(img, 0, 0);
-          
-          // Compression en webp a 80% de qualite
-          canvas.toBlob((blob) => {
+      const img = new window.Image();
+      const objectUrl = URL.createObjectURL(file);
+      
+      img.onload = () => {
+        URL.revokeObjectURL(objectUrl);
+        const canvas = document.createElement('canvas');
+        canvas.width = img.width;
+        canvas.height = img.height;
+        const ctx = canvas.getContext('2d');
+        ctx.drawImage(img, 0, 0);
+        
+        canvas.toBlob((blob) => {
+          if (blob) {
             resolve(blob);
-          }, 'image/webp', 0.8);
-        };
-        img.onerror = error => reject(error);
+          } else {
+            reject(new Error("Erreur lors de la compression de l'image"));
+          }
+        }, 'image/webp', 0.8);
       };
-      reader.onerror = error => reject(error);
+      
+      img.onerror = () => {
+        URL.revokeObjectURL(objectUrl);
+        reject(new Error("Le fichier fourni n'est pas une image valide"));
+      };
+      
+      img.src = objectUrl;
     });
   };
 
@@ -368,9 +373,9 @@ export default function AnnexEditor() {
                 <div className="flex-1">
                   <h3 className="font-bold text-slate-800">{a.title}</h3>
                   <span className="text-xs text-historia-gold font-bold">{a.century}</span>
-                  <p className="text-sm text-slate-600 mt-1 line-clamp-2">{a.description}</p>
+                  <p className="text-sm text-slate-600 mt-1 line-clamp-2">{a.description?.replace(/<[^>]*>?/gm, '')}</p>
                 </div>
-                <div className="absolute top-2 right-2 flex gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                <div className="absolute top-2 right-2 flex gap-2">
                   <button 
                     onClick={() => handleEditClick(a)}
                     className="p-2 bg-blue-100 text-blue-500 rounded-full hover:bg-blue-200"

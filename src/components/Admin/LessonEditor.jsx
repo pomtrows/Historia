@@ -2,17 +2,25 @@ import React, { useState, useEffect } from 'react';
 import { useEditor, EditorContent } from '@tiptap/react';
 import StarterKit from '@tiptap/starter-kit';
 import Image from '@tiptap/extension-image';
-import { Save, Image as ImageIcon, Heading1, Heading2, Bold, Italic, List, Quote, Plus, Trash2 } from 'lucide-react';
+import { Save, Image as ImageIcon, Heading1, Heading2, Bold, Italic, List, Quote, Plus, Trash2, ImagePlus, Loader2 } from 'lucide-react';
 import { supabase } from '../../lib/supabase';
 
-const MenuBar = ({ editor }) => {
+const MenuBar = ({ editor, onImageUpload, isUploadingImage }) => {
   if (!editor) return null;
 
-  const addImage = () => {
+  const addImageFromUrl = () => {
     const url = window.prompt('URL de l\'image:');
     if (url) {
       editor.chain().focus().setImage({ src: url }).run();
     }
+  };
+
+  const handleFileChange = (e) => {
+    const file = e.target.files[0];
+    if (file) {
+      onImageUpload(file);
+    }
+    e.target.value = ''; // Reset input
   };
 
   return (
@@ -38,9 +46,13 @@ const MenuBar = ({ editor }) => {
         <List className="w-5 h-5" />
       </button>
       <div className="w-px h-8 bg-slate-300 mx-1"></div>
-      <button onClick={addImage} className="p-2 rounded hover:bg-slate-200 text-historia-blue" title="Ajouter une image">
+      <button onClick={addImageFromUrl} className="p-2 rounded hover:bg-slate-200 text-historia-blue" title="Ajouter une image depuis une URL">
         <ImageIcon className="w-5 h-5" />
       </button>
+      <label className="p-2 rounded hover:bg-slate-200 text-historia-gold cursor-pointer flex items-center justify-center" title="Uploader une image">
+        {isUploadingImage ? <Loader2 className="w-5 h-5 animate-spin" /> : <ImagePlus className="w-5 h-5" />}
+        <input type="file" accept="image/*" className="hidden" onChange={handleFileChange} disabled={isUploadingImage} />
+      </label>
     </div>
   );
 };
@@ -58,7 +70,73 @@ export default function LessonEditor() {
   const [timelineEvents, setTimelineEvents] = useState([]);
   
   const [isSaving, setIsSaving] = useState(false);
+  const [isUploadingImage, setIsUploadingImage] = useState(false);
   const [message, setMessage] = useState('');
+
+  const compressImage = (file) => {
+    return new Promise((resolve, reject) => {
+      const img = new window.Image();
+      const objectUrl = URL.createObjectURL(file);
+      
+      img.onload = () => {
+        URL.revokeObjectURL(objectUrl);
+        const canvas = document.createElement('canvas');
+        canvas.width = img.width;
+        canvas.height = img.height;
+        const ctx = canvas.getContext('2d');
+        ctx.drawImage(img, 0, 0);
+        
+        canvas.toBlob((blob) => {
+          if (blob) {
+            resolve(blob);
+          } else {
+            reject(new Error("Erreur lors de la compression de l'image"));
+          }
+        }, 'image/webp', 0.8);
+      };
+      
+      img.onerror = () => {
+        URL.revokeObjectURL(objectUrl);
+        reject(new Error("Le fichier fourni n'est pas une image valide"));
+      };
+      
+      img.src = objectUrl;
+    });
+  };
+
+  const handleImageUpload = async (file) => {
+    setIsUploadingImage(true);
+    setMessage('Compression et envoi de l\'image en cours...');
+    try {
+      const compressedBlob = await compressImage(file);
+      const fileName = `${Date.now()}_${Math.random().toString(36).substring(7)}.webp`;
+      const filePath = `lessons/uploads/${fileName}`;
+
+      const { error } = await supabase.storage
+        .from('historia-images')
+        .upload(filePath, compressedBlob, {
+          contentType: 'image/webp',
+          upsert: false
+        });
+
+      if (error) throw error;
+
+      const { data: publicUrlData } = supabase.storage
+        .from('historia-images')
+        .getPublicUrl(filePath);
+
+      const uploadedUrl = publicUrlData.publicUrl;
+      editor.chain().focus().setImage({ src: uploadedUrl }).run();
+      
+      setMessage('Image insérée avec succès !');
+      setTimeout(() => setMessage(''), 3000);
+    } catch (err) {
+      console.error(err);
+      setMessage(`Erreur d'envoi de l'image : ${err.message}`);
+    } finally {
+      setIsUploadingImage(false);
+    }
+  };
 
   const editor = useEditor({
     extensions: [
@@ -113,7 +191,10 @@ export default function LessonEditor() {
         setMapUrl(chapter.map_url || '');
         setEpochId(chapter.epoch_id || '');
         setOrder(chapter.order || 1);
-        setTimelineEvents(chapter.timeline_data || []);
+        setTimelineEvents((chapter.timeline_data || []).map(ev => ({
+          ...ev,
+          id: ev.id || Math.random().toString(36).substring(7)
+        })));
         editor.commands.setContent(chapter.content || '');
       }
     }
@@ -351,7 +432,7 @@ export default function LessonEditor() {
             
             <div className="space-y-4 max-h-96 overflow-y-auto pr-2">
               {timelineEvents.map((ev, i) => (
-                <div key={ev.id} className="p-3 bg-slate-50 border border-slate-200 rounded relative group">
+                <div key={ev.id || `timeline-event-${i}`} className="p-3 bg-slate-50 border border-slate-200 rounded relative group">
                   <button onClick={() => removeTimelineEvent(ev.id)} className="absolute top-2 right-2 text-red-500 opacity-0 group-hover:opacity-100 transition-opacity">
                     <Trash2 className="w-4 h-4" />
                   </button>
@@ -377,7 +458,7 @@ export default function LessonEditor() {
         </div>
 
         <div className="lg:col-span-2">
-          <MenuBar editor={editor} />
+          <MenuBar editor={editor} onImageUpload={handleImageUpload} isUploadingImage={isUploadingImage} />
           <EditorContent editor={editor} />
         </div>
       </div>
