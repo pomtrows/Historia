@@ -3,11 +3,13 @@ import { Link, useParams, useLocation } from 'react-router-dom';
 import { supabase } from '../lib/supabase';
 import TimelineWidget from '../components/Course/TimelineWidget';
 import ChapterNav from '../components/Course/ChapterNav';
+import { ArrowLeft, ArrowRight } from 'lucide-react';
 
 export default function LessonPage() {
   const { id } = useParams();
   const location = useLocation();
   const [chapter, setChapter] = useState(null);
+  const [nextChapterId, setNextChapterId] = useState(null);
   const [loading, setLoading] = useState(true);
   const [zoomedImg, setZoomedImg] = useState(null);
 
@@ -25,6 +27,42 @@ export default function LessonPage() {
         if (error && error.code !== '22P02') throw error; 
         
         setChapter(data);
+
+        if (data && data.epoch_id) {
+          try {
+            const { data: nextInEpoch } = await supabase
+              .from('chapters')
+              .select('id')
+              .eq('epoch_id', data.epoch_id)
+              .gt('order', data.order)
+              .order('order', { ascending: true })
+              .limit(1)
+              .maybeSingle();
+              
+            if (nextInEpoch) {
+              setNextChapterId(nextInEpoch.id);
+            } else {
+              const { data: currEpoch } = await supabase.from('epochs').select('order').eq('id', data.epoch_id).single();
+              if (currEpoch) {
+                const { data: nextEpoch } = await supabase.from('epochs').select('id').gt('order', currEpoch.order).order('order', { ascending: true }).limit(1).maybeSingle();
+                if (nextEpoch) {
+                  const { data: nextChapInNextEpoch } = await supabase.from('chapters').select('id').eq('epoch_id', nextEpoch.id).order('order', { ascending: true }).limit(1).maybeSingle();
+                  if (nextChapInNextEpoch) {
+                    setNextChapterId(nextChapInNextEpoch.id);
+                  } else {
+                    setNextChapterId(null);
+                  }
+                } else {
+                  setNextChapterId(null);
+                }
+              } else {
+                setNextChapterId(null);
+              }
+            }
+          } catch (e) {
+            console.error('Erreur next chapter:', e);
+          }
+        }
       } catch (err) {
         console.error('Erreur chargement chapitre:', err);
       } finally {
@@ -117,6 +155,11 @@ export default function LessonPage() {
   return (
     <>
       <div className="max-w-4xl mx-auto px-4 py-12" onClick={handleImageClick}>
+        <div className="mb-6">
+          <Link to={`/courses#epoch-${chapter.epoch_id || '1'}`} className="inline-flex items-center text-slate-500 hover:text-historia-blue font-bold transition-colors">
+            <ArrowLeft className="w-5 h-5 mr-2" /> Retour aux époques
+          </Link>
+        </div>
         <header className="mb-8 text-center">
           <h1 className="text-4xl md:text-5xl font-serif font-bold text-historia-blue mb-4">{chapter.title}</h1>
         </header>
@@ -153,6 +196,18 @@ export default function LessonPage() {
             Art
           </Link>
         </div>
+        
+        <div className="mt-12 flex flex-col sm:flex-row justify-between items-center border-t border-slate-200 pt-8">
+          <Link to={`/courses#epoch-${chapter.epoch_id || '1'}`} className="inline-flex items-center text-slate-500 hover:text-historia-blue font-bold transition-colors mb-4 sm:mb-0">
+            <ArrowLeft className="w-5 h-5 mr-2" /> Retour aux époques
+          </Link>
+          
+          {nextChapterId && (
+            <Link to={`/lesson/${nextChapterId}`} className="inline-flex items-center bg-slate-100 hover:bg-slate-200 text-historia-blue px-6 py-3 rounded-lg font-bold transition-colors">
+              Chapitre Suivant <ArrowRight className="w-5 h-5 ml-2" />
+            </Link>
+          )}
+        </div>
       </div>
       {zoomModal}
     </>
@@ -165,6 +220,11 @@ function DemoLesson() {
   
   return (
     <div className="max-w-4xl mx-auto px-4 py-12">
+      <div className="mb-6">
+        <Link to={`/courses#epoch-1`} className="inline-flex items-center text-slate-500 hover:text-historia-blue font-bold transition-colors">
+          <ArrowLeft className="w-5 h-5 mr-2" /> Retour aux époques
+        </Link>
+      </div>
       <header className="mb-8 text-center">
         <h1 className="text-4xl md:text-5xl font-serif font-bold text-historia-blue mb-4">Chapitre 1 : L'Aube de l'Humanité</h1>
         <p className="text-lg text-slate-500 italic font-serif">Époque 1 : La Préhistoire</p>
@@ -258,6 +318,12 @@ function DemoLesson() {
         </Link>
         <Link to="/lesson/1/annex" className="bg-white border-2 border-historia-gold text-historia-gold px-8 py-4 rounded-lg font-bold hover:bg-yellow-50 transition-colors shadow-lg text-center">
           Art : L'Art pariétal
+        </Link>
+      </div>
+
+      <div className="mt-12 flex flex-col sm:flex-row justify-between items-center border-t border-slate-200 pt-8">
+        <Link to={`/courses#epoch-1`} className="inline-flex items-center text-slate-500 hover:text-historia-blue font-bold transition-colors mb-4 sm:mb-0">
+          <ArrowLeft className="w-5 h-5 mr-2" /> Retour aux époques
         </Link>
       </div>
     </div>
