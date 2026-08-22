@@ -34,8 +34,8 @@ export default function LessonPage() {
               .from('chapters')
               .select('id')
               .eq('epoch_id', data.epoch_id)
-              .gt('order', data.order)
-              .order('order', { ascending: true })
+              .gt('"order"', data.order)
+              .order('"order"', { ascending: true })
               .limit(1)
               .maybeSingle();
               
@@ -44,9 +44,9 @@ export default function LessonPage() {
             } else {
               const { data: currEpoch } = await supabase.from('epochs').select('order').eq('id', data.epoch_id).single();
               if (currEpoch) {
-                const { data: nextEpoch } = await supabase.from('epochs').select('id').gt('order', currEpoch.order).order('order', { ascending: true }).limit(1).maybeSingle();
+                const { data: nextEpoch } = await supabase.from('epochs').select('id').gt('"order"', currEpoch.order).order('"order"', { ascending: true }).limit(1).maybeSingle();
                 if (nextEpoch) {
-                  const { data: nextChapInNextEpoch } = await supabase.from('chapters').select('id').eq('epoch_id', nextEpoch.id).order('order', { ascending: true }).limit(1).maybeSingle();
+                  const { data: nextChapInNextEpoch } = await supabase.from('chapters').select('id').eq('epoch_id', nextEpoch.id).order('"order"', { ascending: true }).limit(1).maybeSingle();
                   if (nextChapInNextEpoch) {
                     setNextChapterId(nextChapInNextEpoch.id);
                   } else {
