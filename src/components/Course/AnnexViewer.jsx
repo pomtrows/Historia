@@ -139,55 +139,59 @@ export default function AnnexViewer() {
           {annexes.map((annex, index) => {
             const isReversed = index % 2 !== 0;
             return (
-              <div key={annex.id} className={`flex flex-col ${isReversed ? 'md:flex-row-reverse' : 'md:flex-row'} gap-8 items-center bg-white p-6 rounded-2xl shadow-lg border border-slate-100`}>
-                <div className="w-full md:w-1/2 overflow-hidden rounded-xl bg-slate-900 border-4 border-[#2b2b2b] shadow-2xl">
-                  <img 
-                    src={annex.image_url} 
-                    alt={annex.title} 
-                    className="w-full h-auto max-h-[500px] object-cover hover:scale-105 transition-transform duration-700"
-                    referrerPolicy="no-referrer"
-                  />
+              <div key={annex.id} className={`flex flex-col ${isReversed ? 'md:flex-row-reverse' : 'md:flex-row'} gap-8 items-start bg-white p-6 rounded-2xl shadow-lg border border-slate-100`}>
+                
+                {/* Colonne Image + Miniatures */}
+                <div className="w-full md:w-2/5 lg:w-1/3 flex-shrink-0 mx-auto flex flex-col gap-4">
+                  {/* Image Principale */}
+                  <div 
+                    className="overflow-hidden rounded-xl bg-slate-900 border-4 border-[#2b2b2b] shadow-2xl cursor-pointer group"
+                    onClick={() => openLightbox(annex.image_url)}
+                  >
+                    <img 
+                      src={annex.image_url} 
+                      alt={annex.title} 
+                      className="w-full h-auto max-h-[400px] object-cover group-hover:scale-105 transition-transform duration-700"
+                      referrerPolicy="no-referrer"
+                    />
+                  </div>
+
+                  {/* Miniatures de la Galerie */}
+                  {annex.gallery && annex.gallery.length > 0 && (
+                    <div className="grid grid-cols-4 gap-2">
+                      {annex.gallery.map((img, idx) => (
+                        <div 
+                          key={idx} 
+                          onClick={() => openLightbox(img)}
+                          className="aspect-square rounded-lg overflow-hidden shadow-sm border border-slate-200 group cursor-pointer bg-slate-900"
+                        >
+                          <img 
+                            src={img} 
+                            alt={`Galerie ${idx + 1}`} 
+                            className="w-full h-full object-cover group-hover:scale-125 group-hover:opacity-80 transition-all duration-500"
+                            referrerPolicy="no-referrer"
+                          />
+                        </div>
+                      ))}
+                    </div>
+                  )}
                 </div>
-                <div className="w-full md:w-1/2">
+
+                {/* Colonne Texte */}
+                <div className="w-full md:w-3/5 lg:w-2/3 mt-2 md:mt-0">
                   {annex.century && (
                     <span className="text-historia-gold font-bold tracking-wider uppercase text-sm mb-2 block">{annex.century}</span>
                   )}
                   <h3 className="font-serif text-3xl font-bold text-historia-blue mb-4">{annex.title}</h3>
-                  <div className="text-slate-600 leading-relaxed space-y-4 whitespace-pre-wrap">
-                    {annex.description}
-                  </div>
+                  <div 
+                    className="text-slate-600 leading-relaxed space-y-4 whitespace-pre-wrap"
+                    dangerouslySetInnerHTML={{ __html: annex.description }}
+                  />
                 </div>
               </div>
             );
           })}
         </div>
-
-        {/* Rendu de la galerie si présente */}
-        {allGalleryImages.length > 0 && (
-          <div className="mt-24">
-            <div className="text-center mb-12">
-              <h3 className="text-3xl font-serif font-bold text-historia-blue mb-4">Galerie d'Exploration</h3>
-              <div className="w-24 h-1 bg-historia-gold mx-auto rounded-full"></div>
-            </div>
-            
-            <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4">
-              {allGalleryImages.map((img, idx) => (
-                <div 
-                  key={idx} 
-                  onClick={() => openLightbox(idx)}
-                  className="aspect-square rounded-xl overflow-hidden shadow-md border-2 border-slate-200 group cursor-pointer bg-slate-900"
-                >
-                  <img 
-                    src={img} 
-                    alt={`Galerie ${idx + 1}`} 
-                    className="w-full h-full object-cover group-hover:scale-110 group-hover:opacity-80 transition-all duration-500"
-                    referrerPolicy="no-referrer"
-                  />
-                </div>
-              ))}
-            </div>
-          </div>
-        )}
       </div>
 
       {/* Lightbox Modal */}
@@ -204,36 +208,16 @@ export default function AnnexViewer() {
             <X className="w-8 h-8" />
           </button>
 
-          {/* Prev button */}
-          <button 
-            className="absolute left-4 top-1/2 -translate-y-1/2 text-white/50 hover:text-white hover:bg-white/10 p-3 rounded-full transition-all z-50"
-            onClick={prevImage}
-          >
-            <ChevronLeft className="w-10 h-10" />
-          </button>
-
-          {/* Next button */}
-          <button 
-            className="absolute right-4 top-1/2 -translate-y-1/2 text-white/50 hover:text-white hover:bg-white/10 p-3 rounded-full transition-all z-50"
-            onClick={nextImage}
-          >
-            <ChevronRight className="w-10 h-10" />
-          </button>
-
           {/* Main Image */}
           <div className="relative max-w-full max-h-full p-4 md:p-12 flex items-center justify-center">
             <img 
-              src={allGalleryImages[lightboxIndex]} 
-              alt={`Plein écran ${lightboxIndex + 1}`}
-              className="max-h-[85vh] max-w-[85vw] object-contain shadow-2xl rounded"
-              onClick={(e) => e.stopPropagation()} 
+              src={lightboxIndex} // lightboxIndex is now storing the image URL directly for simplicity
+              alt={`Plein écran`}
+              className="max-h-[85vh] max-w-[85vw] object-contain shadow-2xl rounded cursor-pointer"
+              onClick={closeLightbox} 
               referrerPolicy="no-referrer"
+              title="Cliquez pour fermer"
             />
-          </div>
-          
-          {/* Indicators */}
-          <div className="absolute bottom-6 left-1/2 -translate-x-1/2 text-white/70 text-sm font-bold bg-black/50 px-4 py-2 rounded-full">
-            {lightboxIndex + 1} / {allGalleryImages.length}
           </div>
         </div>
       )}

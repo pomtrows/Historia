@@ -19,6 +19,127 @@ export default function AnnexEditor() {
     century: '',
     gallery: []
   });
+  
+  const [isUploading, setIsUploading] = useState(false);
+
+  const compressImage = (file) => {
+    return new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.readAsDataURL(file);
+      reader.onload = (event) => {
+        const img = new Image();
+        img.src = event.target.result;
+        img.onload = () => {
+          const canvas = document.createElement('canvas');
+          // Conserver la resolution d'origine (ou limiter si trop grand)
+          canvas.width = img.width;
+          canvas.height = img.height;
+          const ctx = canvas.getContext('2d');
+          ctx.drawImage(img, 0, 0);
+          
+          // Compression en webp a 80% de qualite
+          canvas.toBlob((blob) => {
+            resolve(blob);
+          }, 'image/webp', 0.8);
+        };
+        img.onerror = error => reject(error);
+      };
+      reader.onerror = error => reject(error);
+    });
+  };
+
+  const handleFileUpload = async (e, isMainImage, idx = null) => {
+    const file = e.target.files[0];
+    if (!file) return;
+
+    setIsUploading(true);
+    setMessage('Compression et envoi de l\'image en cours...');
+    try {
+      const compressedBlob = await compressImage(file);
+      
+      const fileName = `${Date.now()}_${Math.random().toString(36).substring(7)}.webp`;
+      const filePath = `annexes/uploads/${fileName}`;
+
+      const { data, error } = await supabase.storage
+        .from('historia-images')
+        .upload(filePath, compressedBlob, {
+          contentType: 'image/webp',
+          upsert: false
+        });
+
+      if (error) throw error;
+
+      const { data: publicUrlData } = supabase.storage
+        .from('historia-images')
+        .getPublicUrl(filePath);
+
+      const uploadedUrl = publicUrlData.publicUrl;
+
+      if (isMainImage) {
+        setNewAnnex(prev => ({ ...prev, image_url: uploadedUrl }));
+      } else {
+        updateGalleryImage(idx, uploadedUrl);
+      }
+      
+      setMessage('Image compressée et envoyée avec succès !');
+      setTimeout(() => setMessage(''), 3000);
+    } catch (err) {
+      console.error(err);
+      setMessage(`Erreur d'envoi : ${err.message}`);
+    } finally {
+      setIsUploading(false);
+    }
+  };
+
+  const handleBulkGalleryUpload = async (e) => {
+    const files = Array.from(e.target.files);
+    if (!files.length) return;
+
+    setIsUploading(true);
+    setMessage(`Compression et envoi de ${files.length} image(s)...`);
+    
+    try {
+      const uploadedUrls = [];
+      
+      for (let i = 0; i < files.length; i++) {
+        const file = files[i];
+        setMessage(`Envoi de l'image ${i + 1}/${files.length}...`);
+        
+        const compressedBlob = await compressImage(file);
+        const fileName = `${Date.now()}_${Math.random().toString(36).substring(7)}.webp`;
+        const filePath = `annexes/uploads/${fileName}`;
+
+        const { error } = await supabase.storage
+          .from('historia-images')
+          .upload(filePath, compressedBlob, {
+            contentType: 'image/webp',
+            upsert: false
+          });
+
+        if (error) throw error;
+
+        const { data: publicUrlData } = supabase.storage
+          .from('historia-images')
+          .getPublicUrl(filePath);
+
+        uploadedUrls.push(publicUrlData.publicUrl);
+      }
+
+      setNewAnnex(prev => ({ 
+        ...prev, 
+        gallery: [...(prev.gallery || []), ...uploadedUrls] 
+      }));
+      
+      setMessage(`${files.length} image(s) ajoutée(s) à la galerie avec succès !`);
+      setTimeout(() => setMessage(''), 3000);
+    } catch (err) {
+      console.error(err);
+      setMessage(`Erreur lors de l'envoi : ${err.message}`);
+    } finally {
+      setIsUploading(false);
+      e.target.value = '';
+    }
+  };
 
   useEffect(() => {
     fetchChapters();
@@ -298,9 +419,18 @@ export default function AnnexEditor() {
               </div>
 
               <div>
-                <label className="block text-xs font-bold text-slate-700 mb-1">URL de l'image (Wikimedia, Unsplash...)</label>
-                <input required type="url" className="w-full p-2 border rounded text-sm"
-                  value={newAnnex.image_url} onChange={e => setNewAnnex({...newAnnex, image_url: e.target.value})} />
+                <label className="block text-xs font-bold text-slate-700 mb-1">Image Principale</label>
+                <div className="flex gap-2 items-start flex-col">
+                  <input 
+                    type="file" accept="image/*" 
+                    onChange={(e) => handleFileUpload(e, true)} 
+                    disabled={isUploading} 
+                    className="text-sm file:mr-4 file:py-2 file:px-4 file:rounded file:border-0 file:text-sm file:font-semibold file:bg-slate-200 file:text-slate-700 hover:file:bg-slate-300 cursor-pointer" 
+                  />
+                  <span className="text-xs text-slate-500 italic w-full text-center">- OU coller une URL -</span>
+                  <input required type="url" placeholder="URL de l'image" className="w-full p-2 border rounded text-sm"
+                    value={newAnnex.image_url} onChange={e => setNewAnnex({...newAnnex, image_url: e.target.value})} />
+                </div>
               </div>
 
               <div>
@@ -315,35 +445,59 @@ export default function AnnexEditor() {
                 <div className="space-y-2 mt-4 pt-4 border-t border-slate-200">
                   <label className="block text-xs font-bold text-slate-700">Galerie d'images (Optionnelle)</label>
                   {newAnnex.gallery.map((imgUrl, idx) => (
-                    <div key={idx} className="flex gap-2 items-center">
-                      {imgUrl && <img src={imgUrl} alt="Aperçu" className="w-8 h-8 object-cover rounded bg-slate-200" referrerPolicy="no-referrer" />}
-                      <input 
-                        type="url" 
-                        placeholder="URL de l'image" 
-                        className="flex-1 p-2 border rounded text-sm"
-                        value={imgUrl} 
-                        onChange={(e) => updateGalleryImage(idx, e.target.value)} 
-                      />
-                      <button 
-                        type="button" 
-                        onClick={() => removeGalleryImage(idx)}
-                        className="p-2 text-red-500 hover:bg-red-50 rounded"
-                        title="Supprimer cette image"
-                      >
-                        <Trash2 className="w-4 h-4" />
-                      </button>
+                    <div key={idx} className="flex flex-col gap-2 p-3 bg-white border border-slate-200 rounded">
+                      <div className="flex gap-2 items-center">
+                        {imgUrl && <img src={imgUrl} alt="Aperçu" className="w-12 h-12 object-cover rounded bg-slate-200 shadow-sm" referrerPolicy="no-referrer" />}
+                        <div className="flex-1">
+                          <input 
+                            type="file" accept="image/*" 
+                            onChange={(e) => handleFileUpload(e, false, idx)} 
+                            disabled={isUploading} 
+                            className="w-full text-xs file:mr-2 file:py-1 file:px-2 file:rounded file:border-0 file:text-xs file:font-semibold file:bg-slate-200 file:text-slate-700 hover:file:bg-slate-300 cursor-pointer mb-2" 
+                          />
+                          <input 
+                            type="url" 
+                            placeholder="URL de l'image" 
+                            className="w-full p-2 border rounded text-sm"
+                            value={imgUrl} 
+                            onChange={(e) => updateGalleryImage(idx, e.target.value)} 
+                          />
+                        </div>
+                        <button 
+                          type="button" 
+                          onClick={() => removeGalleryImage(idx)}
+                          className="p-2 text-red-500 hover:bg-red-50 rounded"
+                          title="Supprimer cette image"
+                        >
+                          <Trash2 className="w-5 h-5" />
+                        </button>
+                      </div>
                     </div>
                   ))}
                 </div>
               )}
               
-              <button 
-                type="button" 
-                onClick={addGalleryImage}
-                className="mt-2 text-sm font-bold text-historia-gold hover:text-yellow-600 flex items-center"
-              >
-                <Plus className="w-4 h-4 mr-1" /> Ajouter une image à la galerie
-              </button>
+              <div className="flex gap-6 mt-4">
+                <button 
+                  type="button" 
+                  onClick={addGalleryImage}
+                  className="text-sm font-bold text-historia-gold hover:text-yellow-600 flex items-center"
+                >
+                  <Plus className="w-4 h-4 mr-1" /> Ajouter une URL (vide)
+                </button>
+
+                <label className="text-sm font-bold text-historia-blue hover:text-blue-700 flex items-center cursor-pointer">
+                  <Plus className="w-4 h-4 mr-1" /> Uploader plusieurs images d'un coup
+                  <input 
+                    type="file" 
+                    multiple 
+                    accept="image/*" 
+                    onChange={handleBulkGalleryUpload} 
+                    disabled={isUploading} 
+                    className="hidden" 
+                  />
+                </label>
+              </div>
 
               <button type="submit" className="w-full mt-6 bg-historia-gold hover:bg-yellow-600 text-white font-bold py-3 px-4 rounded transition-colors flex items-center justify-center">
                 <Save className="w-5 h-5 mr-2" /> {editingAnnexId ? "Mettre à jour l'œuvre" : "Ajouter l'œuvre"}
