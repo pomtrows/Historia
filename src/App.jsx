@@ -1,5 +1,5 @@
 import React from 'react'
-import { BrowserRouter as Router, Routes, Route } from 'react-router-dom'
+import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom'
 import Navbar from './components/Layout/Navbar'
 import Footer from './components/Layout/Footer'
 import Home from './pages/Home'
@@ -9,10 +9,6 @@ import AnnexViewer from './components/Course/AnnexViewer'
 import VideoViewer from './components/Course/VideoViewer'
 import TimelinePage from './pages/TimelinePage'
 import AdminPanel from './pages/AdminPanel'
-import LessonEditor from './components/Admin/LessonEditor'
-import QuizEditor from './components/Admin/QuizEditor'
-import AnnexEditor from './components/Admin/AnnexEditor'
-import VideoEditor from './components/Admin/VideoEditor'
 import AuthPage from './pages/AuthPage'
 import CoursesPage from './pages/CoursesPage'
 import { AuthProvider } from './contexts/AuthContext'
@@ -35,12 +31,12 @@ function App() {
               <Route path="/lesson/:id/annex" element={<AnnexViewer />} />
               <Route path="/lesson/:id/video" element={<VideoViewer />} />
               
-              {/* Routes Administrateur sécurisées */}
+              {/* Routes Administrateur unifiées */}
               <Route path="/admin" element={<ProtectedRoute requireAdmin={true}><AdminPanel /></ProtectedRoute>} />
-              <Route path="/admin/editor" element={<ProtectedRoute requireAdmin={true}><LessonEditor /></ProtectedRoute>} />
-              <Route path="/admin/quiz" element={<ProtectedRoute requireAdmin={true}><QuizEditor /></ProtectedRoute>} />
-              <Route path="/admin/annexes" element={<ProtectedRoute requireAdmin={true}><AnnexEditor /></ProtectedRoute>} />
-              <Route path="/admin/videos" element={<ProtectedRoute requireAdmin={true}><VideoEditor /></ProtectedRoute>} />
+              <Route path="/admin/editor" element={<Navigate to="/admin?tab=lesson" replace />} />
+              <Route path="/admin/quiz" element={<Navigate to="/admin?tab=quiz" replace />} />
+              <Route path="/admin/annexes" element={<Navigate to="/admin?tab=art" replace />} />
+              <Route path="/admin/videos" element={<Navigate to="/admin?tab=video" replace />} />
             </Routes>
           </main>
           <Footer />

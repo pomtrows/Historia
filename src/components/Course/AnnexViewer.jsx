@@ -26,6 +26,7 @@ export default function AnnexViewer() {
   const { id: chapterId } = useParams();
   const [annexes, setAnnexes] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [chapterInfo, setChapterInfo] = useState(null);
 
   // Lightbox state (stores the URL directly)
   const [lightboxIndex, setLightboxIndex] = useState(null);
@@ -72,6 +73,18 @@ export default function AnnexViewer() {
     const fetchAnnexes = async () => {
       setLoading(true);
       try {
+        // Charger les infos du chapitre
+        const { data: chapData } = await supabase
+          .from('chapters')
+          .select('title, epoch_id')
+          .eq('id', chapterId)
+          .maybeSingle();
+        if (chapData) {
+          setChapterInfo(chapData);
+        } else if (chapterId === "1") {
+          setChapterInfo({ title: "L'Aube de l'Humanité", epoch_id: "1" });
+        }
+
         const { data, error } = await supabase
           .from('annexes')
           .select('*')
@@ -123,13 +136,18 @@ export default function AnnexViewer() {
 
   if (annexes.length === 0) {
     return (
-      <div className="max-w-6xl mx-auto px-4 py-12 text-center">
-         <header className="mb-8">
-           <h1 className="text-4xl md:text-5xl font-serif font-bold text-historia-blue mb-4">Art</h1>
-           <p className="text-lg text-slate-500 italic font-serif">Découvertes et chefs-d'œuvre du chapitre</p>
+      <div className="max-w-6xl mx-auto px-4 py-12">
+         <div className="mb-6">
+           <Link to={`/courses#epoch-${chapterInfo?.epoch_id || '1'}`} className="inline-flex items-center text-slate-500 hover:text-historia-blue font-bold transition-colors">
+             <ArrowLeft className="w-5 h-5 mr-2" /> Retour aux époques
+           </Link>
+         </div>
+         <header className="mb-8 text-center">
+           <h1 className="text-4xl md:text-5xl font-serif font-bold text-historia-blue mb-4">{chapterInfo?.title || "Art"}</h1>
+           <p className="text-lg text-slate-500 italic font-serif">Galerie d'Art et Reliques archéologiques</p>
          </header>
          <ChapterNav chapterId={chapterId} />
-         <div className="text-xl text-slate-500 italic mt-10">Aucun contenu d'art disponible pour ce chapitre.</div>
+         <div className="text-xl text-slate-500 italic mt-10 text-center">Aucun contenu d'art disponible pour ce chapitre.</div>
       </div>
     );
   }
@@ -137,9 +155,14 @@ export default function AnnexViewer() {
   return (
     <>
       <div className="max-w-6xl mx-auto px-4 py-12">
+        <div className="mb-6">
+          <Link to={`/courses#epoch-${chapterInfo?.epoch_id || '1'}`} className="inline-flex items-center text-slate-500 hover:text-historia-blue font-bold transition-colors">
+            <ArrowLeft className="w-5 h-5 mr-2" /> Retour aux époques
+          </Link>
+        </div>
         <header className="mb-8 text-center">
-          <h1 className="text-4xl md:text-5xl font-serif font-bold text-historia-blue mb-4">Art</h1>
-          <p className="text-lg text-slate-500 italic font-serif">Découvertes et chefs-d'œuvre du chapitre</p>
+          <h1 className="text-4xl md:text-5xl font-serif font-bold text-historia-blue mb-4">{chapterInfo?.title || "Art"}</h1>
+          <p className="text-lg text-slate-500 italic font-serif">Galerie d'Art et Reliques archéologiques ({annexes.length} œuvres)</p>
         </header>
 
         <ChapterNav chapterId={chapterId} />

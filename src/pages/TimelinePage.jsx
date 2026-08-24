@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { useParams, Link } from 'react-router-dom';
-import { Loader2 } from 'lucide-react';
+import { Loader2, ArrowLeft } from 'lucide-react';
 import { supabase } from '../lib/supabase';
 import TimelineWidget from '../components/Course/TimelineWidget';
 import ChapterNav from '../components/Course/ChapterNav';
@@ -44,7 +44,7 @@ export default function TimelinePage() {
         setLoading(true);
         const { data, error } = await supabase
           .from('chapters')
-          .select('title, timeline_data')
+          .select('title, epoch_id, timeline_data')
           .eq('id', id)
           .single();
 
@@ -53,12 +53,12 @@ export default function TimelinePage() {
         if (data) {
           setChapter(data);
         } else if (id === "1") {
-          setChapter({ title: "L'Aube de l'Humanité", timeline_data: mockTimeline });
+          setChapter({ title: "L'Aube de l'Humanité", epoch_id: '1', timeline_data: mockTimeline });
         }
       } catch (err) {
         console.error('Erreur chargement chapitre:', err);
         if (id === "1") {
-          setChapter({ title: "L'Aube de l'Humanité", timeline_data: mockTimeline });
+          setChapter({ title: "L'Aube de l'Humanité", epoch_id: '1', timeline_data: mockTimeline });
         }
       } finally {
         setLoading(false);
@@ -80,12 +80,16 @@ export default function TimelinePage() {
   if (!chapter) {
     return (
       <div className="max-w-4xl mx-auto px-4 py-8 text-center">
+         <div className="mb-6 text-left">
+           <Link to="/courses" className="inline-flex items-center text-slate-500 hover:text-historia-blue font-bold transition-colors">
+             <ArrowLeft className="w-5 h-5 mr-2" /> Retour aux époques
+           </Link>
+         </div>
          <header className="mb-4">
            <h1 className="text-3xl md:text-4xl font-serif font-bold text-historia-blue mb-2">Frise</h1>
          </header>
          <ChapterNav chapterId={id} />
          <div className="text-xl text-slate-500 italic mt-10">Ce chapitre n'existe pas.</div>
-         <Link to="/courses" className="inline-block mt-6 text-historia-gold hover:underline font-bold">Retour aux époques</Link>
       </div>
     );
   }
@@ -93,10 +97,15 @@ export default function TimelinePage() {
   const hasTimeline = chapter.timeline_data && chapter.timeline_data.length > 0;
 
   return (
-    <div className="max-w-4xl mx-auto px-4 py-4">
-      <header className="mb-4 text-center">
-        <h1 className="text-3xl md:text-4xl font-serif font-bold text-historia-blue mb-2">Frise Chronologique</h1>
-        <p className="text-base text-slate-500 italic font-serif">Les dates clés de : {chapter.title}</p>
+    <div className="max-w-4xl mx-auto px-4 py-4 md:py-12">
+      <div className="mb-6">
+        <Link to={`/courses#epoch-${chapter.epoch_id || '1'}`} className="inline-flex items-center text-slate-500 hover:text-historia-blue font-bold transition-colors">
+          <ArrowLeft className="w-5 h-5 mr-2" /> Retour aux époques
+        </Link>
+      </div>
+      <header className="mb-8 text-center">
+        <h1 className="text-4xl md:text-5xl font-serif font-bold text-historia-blue mb-4">{chapter.title}</h1>
+        <p className="text-lg text-slate-500 italic font-serif">Frise Chronologique des dates clés</p>
       </header>
 
       <ChapterNav chapterId={id} />

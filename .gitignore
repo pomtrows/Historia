@@ -12,13 +12,16 @@ dist
 dist-ssr
 *.local
 
-# Editor directories and files
-.vscode/*
-!.vscode/extensions.json
-.idea
-.DS_Store
-*.suo
-*.ntvs*
-*.njsproj
-*.sln
-*.sw?
+# Environment & Secrets
+.env
+.env.*
+!.env.example
+
+# Generator & audit scripts
+*.cjs
+*.html
+*.json
+!package.json
+!tsconfig*.json
+pnpm-lock.yaml
+*.bak

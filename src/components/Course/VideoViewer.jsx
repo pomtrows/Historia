@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
-import { useParams } from 'react-router-dom';
-import { Loader2 } from 'lucide-react';
+import { Link, useParams } from 'react-router-dom';
+import { Loader2, ArrowLeft } from 'lucide-react';
 import { supabase } from '../../lib/supabase';
 import ChapterNav from './ChapterNav';
 
@@ -24,6 +24,7 @@ export default function VideoViewer() {
   const { id: chapterId } = useParams();
   const [videos, setVideos] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [chapterInfo, setChapterInfo] = useState(null);
 
   // Helper pour extraire l'ID youtube d'une URL pour l'iframe si ce n'est pas déjà un lien embed
   const getEmbedUrl = (url) => {
@@ -58,6 +59,18 @@ export default function VideoViewer() {
     const fetchVideos = async () => {
       setLoading(true);
       try {
+        // Charger les infos du chapitre
+        const { data: chapData } = await supabase
+          .from('chapters')
+          .select('title, epoch_id')
+          .eq('id', chapterId)
+          .maybeSingle();
+        if (chapData) {
+          setChapterInfo(chapData);
+        } else if (chapterId === "1") {
+          setChapterInfo({ title: "L'Aube de l'Humanité", epoch_id: "1" });
+        }
+
         const { data, error } = await supabase
           .from('videos')
           .select('*')
@@ -104,22 +117,32 @@ export default function VideoViewer() {
 
   if (videos.length === 0) {
     return (
-      <div className="max-w-6xl mx-auto px-4 py-12 text-center">
-         <header className="mb-8">
-           <h1 className="text-4xl md:text-5xl font-serif font-bold text-historia-blue mb-4">Vidéos</h1>
-           <p className="text-lg text-slate-500 italic font-serif">Contenus vidéos pour approfondir le chapitre</p>
+      <div className="max-w-6xl mx-auto px-4 py-12">
+         <div className="mb-6">
+           <Link to={`/courses#epoch-${chapterInfo?.epoch_id || '1'}`} className="inline-flex items-center text-slate-500 hover:text-historia-blue font-bold transition-colors">
+             <ArrowLeft className="w-5 h-5 mr-2" /> Retour aux époques
+           </Link>
+         </div>
+         <header className="mb-8 text-center">
+           <h1 className="text-4xl md:text-5xl font-serif font-bold text-historia-blue mb-4">{chapterInfo?.title || "Vidéos"}</h1>
+           <p className="text-lg text-slate-500 italic font-serif">Ressources audiovisuelles et documentaires</p>
          </header>
          <ChapterNav chapterId={chapterId} />
-         <div className="text-xl text-slate-500 italic mt-10">Aucune vidéo disponible pour ce chapitre.</div>
+         <div className="text-xl text-slate-500 italic mt-10 text-center">Aucune vidéo disponible pour ce chapitre.</div>
       </div>
     );
   }
 
   return (
     <div className="max-w-6xl mx-auto px-4 py-12">
+      <div className="mb-6">
+        <Link to={`/courses#epoch-${chapterInfo?.epoch_id || '1'}`} className="inline-flex items-center text-slate-500 hover:text-historia-blue font-bold transition-colors">
+          <ArrowLeft className="w-5 h-5 mr-2" /> Retour aux époques
+        </Link>
+      </div>
       <header className="mb-8 text-center">
-        <h1 className="text-4xl md:text-5xl font-serif font-bold text-historia-blue mb-4">Vidéos</h1>
-        <p className="text-lg text-slate-500 italic font-serif">Contenus vidéos pour approfondir le chapitre</p>
+        <h1 className="text-4xl md:text-5xl font-serif font-bold text-historia-blue mb-4">{chapterInfo?.title || "Vidéos"}</h1>
+        <p className="text-lg text-slate-500 italic font-serif">Ressources audiovisuelles et documentaires ({videos.length} vidéos)</p>
       </header>
 
       <ChapterNav chapterId={chapterId} />

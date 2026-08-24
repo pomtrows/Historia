@@ -39,11 +39,24 @@ export default function QuizWidget() {
   const [quizFinished, setQuizFinished] = useState(false);
   const [loading, setLoading] = useState(true);
   const [quizDetails, setQuizDetails] = useState(null);
+  const [chapterInfo, setChapterInfo] = useState(null);
 
   useEffect(() => {
     const fetchQuiz = async () => {
       setLoading(true);
       try {
+        // Charger les infos du chapitre
+        const { data: chapData } = await supabase
+          .from('chapters')
+          .select('title, epoch_id')
+          .eq('id', chapterId)
+          .maybeSingle();
+        if (chapData) {
+          setChapterInfo(chapData);
+        } else if (chapterId === "1") {
+          setChapterInfo({ title: "L'Aube de l'Humanité", epoch_id: "1" });
+        }
+
         const { data: quizData, error: quizError } = await supabase
           .from('quizzes')
           .select('id, title')
@@ -137,20 +150,37 @@ export default function QuizWidget() {
 
   if (questions.length === 0) {
     return (
-      <div className="max-w-4xl mx-auto px-4 py-4 text-center">
-         <header className="mb-4">
-           <h1 className="text-3xl md:text-4xl font-serif font-bold text-historia-blue mb-2">Quiz</h1>
+      <div className="max-w-4xl mx-auto px-4 py-4 md:py-12">
+         <div className="mb-6">
+           <Link to={`/courses#epoch-${chapterInfo?.epoch_id || '1'}`} className="inline-flex items-center text-slate-500 hover:text-historia-blue font-bold transition-colors">
+             <ArrowLeft className="w-5 h-5 mr-2" /> Retour aux époques
+           </Link>
+         </div>
+         <header className="mb-8 text-center">
+           <h1 className="text-4xl md:text-5xl font-serif font-bold text-historia-blue mb-4">{chapterInfo?.title || "Quiz"}</h1>
+           <p className="text-lg text-slate-500 italic font-serif">Testez votre maîtrise de cet épisode</p>
          </header>
          <ChapterNav chapterId={chapterId} />
-         <div className="text-xl text-slate-500 italic mt-10">Aucun quiz disponible pour ce chapitre.</div>
-         <Link to={`/lesson/${chapterId}`} className="inline-block mt-6 text-historia-gold hover:underline font-bold">Retour à la leçon</Link>
+         <div className="text-xl text-slate-500 italic mt-10 text-center">Aucun quiz disponible pour ce chapitre.</div>
+         <div className="text-center mt-6">
+           <Link to={`/lesson/${chapterId}`} className="inline-block text-historia-gold hover:underline font-bold">Retour à la leçon</Link>
+         </div>
       </div>
     );
   }
 
   if (quizFinished) {
     return (
-      <div className="max-w-4xl mx-auto px-4 py-4">
+      <div className="max-w-4xl mx-auto px-4 py-4 md:py-12">
+        <div className="mb-6">
+          <Link to={`/courses#epoch-${chapterInfo?.epoch_id || '1'}`} className="inline-flex items-center text-slate-500 hover:text-historia-blue font-bold transition-colors">
+            <ArrowLeft className="w-5 h-5 mr-2" /> Retour aux époques
+          </Link>
+        </div>
+        <header className="mb-8 text-center">
+          <h1 className="text-4xl md:text-5xl font-serif font-bold text-historia-blue mb-4">{chapterInfo?.title || "Quiz"}</h1>
+        </header>
+        <ChapterNav chapterId={chapterId} />
         <div className="max-w-3xl mx-auto mt-6 p-6 md:p-8 bg-white rounded-2xl shadow-xl border-t-8 border-historia-gold text-center">
           <h2 className="text-3xl md:text-4xl font-serif font-bold text-historia-blue mb-3">Quiz Terminé !</h2>
           <p className="text-xl mb-6">Votre score : <span className="font-bold text-historia-gold">{score} / {questions.length}</span></p>
@@ -166,12 +196,17 @@ export default function QuizWidget() {
   const question = questions[currentQuestion];
 
   return (
-    <div className="max-w-4xl mx-auto px-4 py-4">
-      <header className="mb-4 text-center">
-        <h1 className="text-3xl md:text-4xl font-serif font-bold text-historia-blue mb-2">
-          {quizDetails?.title || "Quiz"}
+    <div className="max-w-4xl mx-auto px-4 py-4 md:py-12">
+      <div className="mb-6">
+        <Link to={`/courses#epoch-${chapterInfo?.epoch_id || '1'}`} className="inline-flex items-center text-slate-500 hover:text-historia-blue font-bold transition-colors">
+          <ArrowLeft className="w-5 h-5 mr-2" /> Retour aux époques
+        </Link>
+      </div>
+      <header className="mb-8 text-center">
+        <h1 className="text-4xl md:text-5xl font-serif font-bold text-historia-blue mb-4">
+          {chapterInfo?.title || quizDetails?.title || "Quiz"}
         </h1>
-        <p className="text-base text-slate-500 italic font-serif">Validez vos connaissances du chapitre</p>
+        <p className="text-lg text-slate-500 italic font-serif">Validez vos connaissances du chapitre ({questions.length} questions)</p>
       </header>
 
       <ChapterNav chapterId={chapterId} />

@@ -55,8 +55,9 @@ h1, h2, h3, h4, h5, h6 {
   font-family: var(--font-serif);
 }
 
+/* Style des citations / anecdotes */
 .prose blockquote {
-  background-color: #fefce8; /* fond crème/jaune très clair */
+  background-color: #fefce8;
   border-left: 4px solid var(--color-historia-gold);
   padding: 1.5rem;
   margin-top: 2rem;
@@ -73,11 +74,27 @@ h1, h2, h3, h4, h5, h6 {
   content: none !important;
 }
 
-/* Style spécifique pour le titre de l'anecdote mis en gras à l'intérieur de la citation */
-.prose blockquote strong {
-  color: var(--color-historia-gold);
-  display: block;
-  font-style: normal;
-  font-size: 1.125rem;
-  margin-bottom: 0.5rem;
+/* Titre de l'anecdote (💡 Dans l'ombre de l'Histoire) */
+.prose blockquote .anecdote-title {
+  display: block !important;
+  color: var(--color-historia-gold) !important;
+  font-style: normal !important;
+  font-size: 1.125rem !important;
+  font-weight: 700 !important;
+  margin-bottom: 0.5rem !important;
+}
+
+/* TOUS les mots en gras à l'intérieur des anecdotes sont STRICTEMENT inline */
+.prose blockquote strong,
+.prose blockquote b,
+.prose blockquote p strong,
+.prose blockquote p b {
+  display: inline !important;
+  font-weight: 700 !important;
+  color: #0f172a !important;
+  font-style: italic !important;
+  font-size: inherit !important;
+  margin: 0 !important;
+  padding: 0 !important;
+  vertical-align: baseline !important;
 }
