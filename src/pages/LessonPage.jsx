@@ -188,6 +188,7 @@ export default function LessonPage() {
             __html: (chapter.content || '')
               .replace(/<h[12][^>]*>\s*(?:<strong>)?\s*Chapitre\s*\d*\s*:[^<]*(?:<\/strong>)?\s*<\/h[12]>/gi, '')
               .replace(/<h[12][^>]*>\s*(?:<strong>)?\s*CHAPITRE\s*\d*\s*:[^<]*(?:<\/strong>)?\s*<\/h[12]>/gi, '')
+              .replace(/<img(?![^>]*\bloading=)/gi, '<img loading="lazy" decoding="async"')
           }}
         />
         </div>
