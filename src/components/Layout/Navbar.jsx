@@ -31,9 +31,15 @@ export default function Navbar() {
 
             {/* Logo centré sur mobile, à gauche sur Desktop */}
             <div className="absolute left-1/2 -translate-x-1/2 md:static md:transform-none flex items-center">
-              <Link to="/" className="flex items-center space-x-2">
-                <BookOpen className="hidden md:block h-8 w-8 text-historia-gold" />
-                <span className="font-serif text-2xl font-bold tracking-wider">Historia</span>
+              <Link to="/" className="flex items-center space-x-3 group">
+                <img 
+                  src="/favicon.svg" 
+                  alt="Historia Logo" 
+                  className="h-9 w-9 rounded-xl shadow-md group-hover:scale-105 transition-transform" 
+                />
+                <span className="font-serif text-2xl font-bold tracking-wider text-transparent bg-clip-text bg-gradient-to-r from-amber-200 via-amber-300 to-yellow-500">
+                  Historia
+                </span>
               </Link>
             </div>
             
@@ -80,8 +86,8 @@ export default function Navbar() {
           {/* Panneau latéral (blanc, glisse de la gauche) */}
           <div className="relative w-[85%] max-w-sm bg-white h-full flex flex-col shadow-2xl animate-fade-in-left">
             <div className="flex justify-between items-center p-6 border-b border-slate-100">
-               <div className="flex items-center space-x-2 text-historia-blue">
-                 <BookOpen className="h-8 w-8 text-historia-gold" />
+               <div className="flex items-center space-x-3 text-historia-blue">
+                 <img src="/favicon.svg" alt="Historia Logo" className="h-8 w-8 rounded-lg shadow-sm" />
                  <span className="font-serif text-2xl font-bold tracking-wider">Historia</span>
                </div>
                <button onClick={() => setIsMobileMenuOpen(false)} className="text-slate-400 hover:text-slate-800 p-1">

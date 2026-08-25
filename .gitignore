@@ -23,5 +23,6 @@ dist-ssr
 *.json
 !package.json
 !tsconfig*.json
+!public/manifest.json
 pnpm-lock.yaml
 *.bak

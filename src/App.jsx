@@ -13,6 +13,7 @@ import AuthPage from './pages/AuthPage'
 import CoursesPage from './pages/CoursesPage'
 import { AuthProvider } from './contexts/AuthContext'
 import ProtectedRoute from './components/Auth/ProtectedRoute'
+import PWAInstallPrompt from './components/Shared/PWAInstallPrompt'
 
 function App() {
   return (
@@ -20,6 +21,7 @@ function App() {
       <Router>
         <div className="flex flex-col min-h-screen">
           <Navbar />
+          <PWAInstallPrompt />
           <main className="flex-grow">
             <Routes>
               <Route path="/" element={<Home />} />
