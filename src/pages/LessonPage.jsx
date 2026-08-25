@@ -183,7 +183,7 @@ export default function LessonPage() {
 
         {/* Rendu dynamique du HTML de TipTap */}
         <article 
-          className="prose prose-lg max-w-none prose-headings:font-serif prose-headings:text-historia-blue prose-p:text-slate-700 prose-p:leading-relaxed space-y-6 [&_img]:cursor-zoom-in"
+          className="prose prose-lg md:prose-xl max-w-none prose-headings:font-serif prose-headings:text-historia-blue prose-h2:text-2xl md:prose-h2:text-3xl prose-h2:mt-16 prose-h2:mb-8 prose-h2:pt-6 prose-h2:border-t prose-h2:border-slate-200 prose-h3:text-xl md:prose-h3:text-2xl prose-h3:mt-10 prose-h3:mb-6 prose-p:text-slate-800 prose-p:leading-[2.05] md:prose-p:leading-[2.15] prose-p:mb-8 prose-p:text-lg space-y-6 [&_img]:cursor-zoom-in"
           dangerouslySetInnerHTML={{ 
             __html: (chapter.content || '')
               .replace(/<h[12][^>]*>\s*(?:<strong>)?\s*Chapitre\s*\d*\s*:[^<]*(?:<\/strong>)?\s*<\/h[12]>/gi, '')
