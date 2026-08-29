@@ -40,7 +40,7 @@ export default function Home() {
             <Link to={`/courses#epoch-${epoch.id}`} key={epoch.id} className="bg-white rounded-lg shadow-lg overflow-hidden border border-slate-100 hover:shadow-xl transition-shadow cursor-pointer group flex flex-col">
               <div className="h-48 bg-slate-200 relative flex items-center justify-center overflow-hidden">
                 {epoch.image_url ? (
-                  <img src={epoch.image_url} alt={epoch.title} className="absolute inset-0 w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" />
+                  <img src={epoch.image_url} alt={epoch.title} loading="lazy" decoding="async" className="absolute inset-0 w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" />
                 ) : (
                   <div className="absolute inset-0 bg-historia-blue opacity-10"></div>
                 )}
